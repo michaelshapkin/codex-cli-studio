@@ -56,14 +56,14 @@ def script(
     """
     ⚙️ Generate a script (Bash, Python, etc.) from a description.
     """
-    console.print(f"Executing Script command for task: [bold magenta]{task_description}[/bold magenta]")
+    # console.print(f"Executing Script command for task: [bold magenta]{task_description}[/bold magenta]")
     # Placeholder for the actual logic call
     # result = script_module.generate_script(task_description, output_type)
     # console.print(result)
     # if not dry_run:
     #     # (Caution!) Potentially execute the script
     #     pass
-    console.print("[yellow]Script generation logic not implemented yet.[/yellow]")
+    script_module.generate_script(task_description, output_type)
 
 # --- Application Entry Point ---
 
