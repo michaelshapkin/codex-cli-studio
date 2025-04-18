@@ -43,7 +43,7 @@ def explain(
     # Placeholder for the actual logic call
     # result = explain_module.explain_code(input_str, detail, lang)
     # console.print(result)
-    console.print("[yellow]Explain logic not implemented yet.[/yellow]")
+    explain_module.explain_code(input_str)
 
 @app.command()
 def script(
