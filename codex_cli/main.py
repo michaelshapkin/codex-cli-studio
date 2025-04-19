@@ -27,18 +27,35 @@ console = Console()
 
 # --- Command Definitions ---
 
+
 @app.command()
 def explain(
-    ctx: typer.Context, # Typer context (currently unused, but good practice)
+    ctx: typer.Context, # Typer context
     input_str: str = typer.Argument(..., help="The code snippet, shell command, or file path to explain."),
-    # --- Future options ---
-    # detail: str = typer.Option("basic", "--detail", "-d", help="Level of detail: 'basic' or 'detailed'."),
-    # lang: str = typer.Option("en", "--lang", "-l", help="Language for the explanation (e.g., 'en', 'ru').")
+    
+    detail: str = typer.Option(
+        "basic", # Default value if option not provided
+        "--detail",
+        "-d",
+        help="Level of detail for the explanation: 'basic' or 'detailed'.",
+        case_sensitive=False, # Allow 'Basic', 'Detailed', etc.
+    ),
+    lang: str = typer.Option(
+        "en", # Default language code
+        "--lang",
+        "-l",
+        help="Language code for the explanation (e.g., 'en', 'ru', 'es', 'ja').",
+        case_sensitive=False, # Allow 'EN', 'ru', etc.
+    )
+    
 ):
     """
     📖 Explain a piece of code or a shell command using an AI model.
     """
-    explain_module.explain_code(input_str)
+    # --- UPDATED CALL: Pass options to the handler ---
+    explain_module.explain_code(input_str, detail, lang)
+
+
 
 @app.command()
 def script(

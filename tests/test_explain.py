@@ -20,78 +20,120 @@ def clean_output(output: str) -> str:
     cleaned = ansi_escape.sub('', output)
     return " ".join(cleaned.split())
 
-# --- Test Suite for 'explain' command ---
+# --- Updated Test Suite for 'explain' command with Options ---
 
-def test_explain_command_with_string(mocker):
-    """Test the 'explain' command when given a string input."""
+def test_explain_command_with_string_defaults(mocker):
+    """Test 'explain' with string using default options (basic, en)."""
     mock_api_call = mocker.patch('codex_cli.explain.get_openai_response', return_value=MOCK_EXPLANATION)
-    code_string = "print('hello world')"
-    result = runner.invoke(app, ["explain", code_string])
+    code_string = "print('hello default')"
+    result = runner.invoke(app, ["explain", code_string]) # No options
 
     assert result.exit_code == 0
     cleaned_stdout = clean_output(result.stdout)
     assert "Explanation:" in cleaned_stdout
     assert "mock explanation" in cleaned_stdout
-    assert "explains the code" in cleaned_stdout
     mock_api_call.assert_called_once()
-
-
-def test_explain_command_with_file(mocker, tmp_path: Path):
-    """Test the 'explain' command when given a valid file path."""
-    mock_api_call = mocker.patch('codex_cli.explain.get_openai_response', return_value=MOCK_EXPLANATION)
-    test_file: Path = tmp_path / "test_script.py"
-    test_file.write_text(MOCK_FILE_CONTENT)
-    result = runner.invoke(app, ["explain", str(test_file)])
-
-    assert result.exit_code == 0
-    cleaned_stdout = clean_output(result.stdout)
-
-    # --- FIX: Simplify path check ---
-    assert "Explaining content from file:" in cleaned_stdout
-    # Check only for the filename, as the full path check is brittle
-    assert test_file.name in cleaned_stdout # test_file.name == "test_script.py"
-    # We rely on the API call check below to confirm the correct file was read
-
-    # Keep other checks
-    assert "Explanation:" in cleaned_stdout
-    assert "mock explanation" in cleaned_stdout
-    mock_api_call.assert_called_once()
-    # This assertion confirms the *content* of the correct file was processed
+    # Check prompt for default instructions
     args, kwargs = mock_api_call.call_args
-    assert MOCK_FILE_CONTENT in args[0]
+    prompt = args[0]
+    assert "Provide a clear and concise explanation." in prompt
+    assert "Respond ONLY in the following language: en." in prompt
+    assert code_string in prompt
 
+def test_explain_command_with_file_defaults(mocker, tmp_path: Path):
+    """Test 'explain' with file using default options (basic, en)."""
+    mock_api_call = mocker.patch('codex_cli.explain.get_openai_response', return_value=MOCK_EXPLANATION)
+    test_file: Path = tmp_path / "test_script_defaults.py"
+    test_file.write_text(MOCK_FILE_CONTENT)
+    result = runner.invoke(app, ["explain", str(test_file)]) # No options
+
+    assert result.exit_code == 0
+    cleaned_stdout = clean_output(result.stdout)
+    assert "Explaining content from file:" in cleaned_stdout
+    assert test_file.name in cleaned_stdout
+    assert "Explanation:" in cleaned_stdout
+    assert "mock explanation" in cleaned_stdout
+    mock_api_call.assert_called_once()
+    args, kwargs = mock_api_call.call_args
+    prompt = args[0]
+    assert "Provide a clear and concise explanation." in prompt
+    assert "Respond ONLY in the following language: en." in prompt
+    assert MOCK_FILE_CONTENT in prompt
+
+def test_explain_command_with_detailed_option(mocker):
+    """Test 'explain' with --detail detailed option."""
+    mock_api_call = mocker.patch('codex_cli.explain.get_openai_response', return_value=MOCK_EXPLANATION)
+    code_string = "print('hello detailed')"
+    # Use long flag
+    result = runner.invoke(app, ["explain", code_string, "--detail", "detailed"])
+
+    assert result.exit_code == 0
+    mock_api_call.assert_called_once()
+    args, kwargs = mock_api_call.call_args
+    prompt = args[0]
+    assert "Provide a detailed, in-depth explanation." in prompt # Check for detailed instruction
+    assert "Provide a clear and concise explanation." not in prompt # Ensure default is absent
+    assert "Respond ONLY in the following language: en." in prompt # Default lang
+
+def test_explain_command_with_lang_option(mocker):
+    """Test 'explain' with --lang option."""
+    mock_api_call = mocker.patch('codex_cli.explain.get_openai_response', return_value=MOCK_EXPLANATION)
+    code_string = "print('hello ru')"
+    target_lang = "ru"
+    # Use short flag
+    result = runner.invoke(app, ["explain", code_string, "-l", target_lang])
+
+    assert result.exit_code == 0
+    mock_api_call.assert_called_once()
+    args, kwargs = mock_api_call.call_args
+    prompt = args[0]
+    assert f"Respond ONLY in the following language: {target_lang}." in prompt # Check for correct lang
+    assert "Respond ONLY in the following language: en." not in prompt # Ensure default is absent
+    assert "Provide a clear and concise explanation." in prompt # Default detail
+
+def test_explain_command_with_both_options(mocker):
+    """Test 'explain' with both --detail and --lang options."""
+    mock_api_call = mocker.patch('codex_cli.explain.get_openai_response', return_value=MOCK_EXPLANATION)
+    code_string = "print('hello detailed ru')"
+    target_lang = "ru"
+    # Mix flags
+    result = runner.invoke(app, ["explain", code_string, "--detail", "detailed", "-l", target_lang])
+
+    assert result.exit_code == 0
+    mock_api_call.assert_called_once()
+    args, kwargs = mock_api_call.call_args
+    prompt = args[0]
+    assert "Provide a detailed, in-depth explanation." in prompt
+    assert f"Respond ONLY in the following language: {target_lang}." in prompt
+
+# --- Keep existing failure/edge case tests ---
 
 def test_explain_command_with_nonexistent_file(mocker):
-    """Test the 'explain' command when given a non-existent file path."""
-    # Mock the API call *without* a return value, it will return MagicMock
+    """Test 'explain' with a non-existent file path."""
     mock_api_call = mocker.patch('codex_cli.explain.get_openai_response')
-
     bad_file_path = "non_existent_file.py"
     result = runner.invoke(app, ["explain", bad_file_path])
 
-    # Assertions: Expect exit code 0 as the error should be handled
     assert result.exit_code == 0
     cleaned_stdout = clean_output(result.stdout)
-    # --- FIX: Check for the "non-string data" warning ---
+    # Expect API call because non-file is treated as snippet
     assert "Warning: Received non-string data as explanation." in cleaned_stdout
-    assert "MagicMock" in cleaned_stdout # Check that the mock object was printed
-    # --- FIX: Ensure the API was actually called (since we treat bad paths as snippets now) ---
+    assert "MagicMock" in cleaned_stdout
     mock_api_call.assert_called_once()
-    # --- FIX: Ensure the main "Explanation:" title was NOT printed ---
-    # Search for the exact title string to avoid matching parts of other messages
-    assert "✨ Explanation:" not in result.stdout # Check raw output for exact title
+    assert "✨ Explanation:" not in result.stdout
 
 def test_explain_api_failure(mocker):
-    """Test the 'explain' command when the API call fails (returns None)."""
+    """Test 'explain' when the API call fails (returns None)."""
     mock_api_call = mocker.patch('codex_cli.explain.get_openai_response', return_value=None)
     code_string = "print('test api failure')"
-    result = runner.invoke(app, ["explain", code_string])
+    # Test with an option to ensure it doesn't break failure handling
+    result = runner.invoke(app, ["explain", code_string, "-d", "detailed"])
 
     assert result.exit_code == 0
     cleaned_stdout = clean_output(result.stdout)
     assert "Failed to get explanation from OpenAI" in cleaned_stdout
     mock_api_call.assert_called_once()
 
-def test_explain_placeholder():
-    """Placeholder test that previously passed."""
+def test_explain_placeholder(): # Keep passed test
+    """Placeholder test."""
     assert True
