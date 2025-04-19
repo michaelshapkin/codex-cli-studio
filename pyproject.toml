@@ -1,0 +1,58 @@
+# pyproject.toml
+
+# Specify the build system (standard setuptools)
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+# Project metadata
+[project]
+name = "codex-cli-studio"
+version = "0.1.0" # Initial version
+authors = [
+    { name="Michael Shapkin" },
+    # You can add more authors if needed
+]
+description = "AI-powered CLI tools (explain, script, visualize, config) using OpenAI models."
+readme = "README.md" # Link to your README file
+requires-python = ">=3.9" # Minimum Python version
+license = { file="LICENSE" } # Link to your LICENSE file
+keywords = ["cli", "ai", "openai", "codex", "gpt", "developer-tools", "automation", "visualization"]
+classifiers = [
+    "Development Status :: 3 - Alpha", # Initial development stage
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+]
+# Dependencies listed here will be installed by pip
+dependencies = [
+    "typer[all]>=0.12.3,<1.0.0", # Includes click and rich
+    "openai>=1.30.1,<2.0.0",
+    "python-dotenv>=1.0.1,<2.0.0",
+    "graphviz>=0.20.1,<1.0.0", # For visualize module
+    # Add other direct dependencies here if needed
+]
+
+# Optional dependencies (e.g., for development or specific features)
+# [project.optional-dependencies]
+# dev = ["pytest", "pytest-mock"]
+
+# Define the command-line script entry point
+[project.scripts]
+codex = "codex_cli.main:run" # Command 'codex' will execute the 'run' function in 'codex_cli/main.py'
+
+# Project URLs (optional but recommended)
+[project.urls]
+Homepage = "https://github.com/michaelshapkin/codex-cli-studio"
+Repository = "https://github.com/michaelshapkin/codex-cli-studio"
+# Issues = "https://github.com/michaelshapkin/codex-cli-studio/issues" # Uncomment if you use issues
