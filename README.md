@@ -1,5 +1,6 @@
 # 🧰 Codex CLI Studio
 
+[![PyPI version](https://badge.fury.io/py/codex-cli-studio.svg)](https://badge.fury.io/py/codex-cli-studio)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 > A powerful suite of command-line tools powered by OpenAI models, built to supercharge productivity, learning, and automation for developers, DevOps, and students alike.
@@ -15,86 +16,68 @@ See `Codex CLI Studio` in action! This animation shows basic usage of the `expla
 
 ---
 
-
 ## 🚀 Overview & Status
 Codex CLI Studio is a modular set of CLI tools leveraging OpenAI's API.
 
-**Current Modules:**
+**Current Modules (v0.1.0):**
 
-*   ✅ `explain`: Explain code, shell commands, or file content. *(Implemented)*
-*   ✅ `script`: Generate scripts (Bash, Python, PowerShell) from natural language. *(Implemented)*
-*   ✅ `visualize`: Generate function call graphs for Python files (DOT/Image output). *(Implemented)*
-*   ✅ `config explain`: Explain configuration files. *(Implemented)*
-*   🛠️ `config edit`: Modify configuration files (Planned).
+*   ✅ `explain`: Explain code, shell commands, or file content. 
+*   ✅ `script`: Generate scripts (Bash, Python, PowerShell) from natural language. 
+*   ✅ `visualize`: Generate function call graphs for Python files (DOT/Image output).
+*   ✅ `config explain`: Explain configuration files. 
+*   🛠️ `config edit`: Modify configuration files *(Planned)*.
 
 ---
 
-## 🔌 Installation (from source)
-
-Currently, installation is available directly from the source code. Publishing to PyPI (`pip install codex-cli-studio`) is planned.
+## 🔌 Installation
 
 **Prerequisites:**
 *   Python 3.9+
-*   `pip` and `venv` (recommended)
-*   [Graphviz](https://graphviz.org/download/) (specifically the `dot` command) - *Required only for rendering visualizations to image formats (png, svg, etc.) within the `visualize` command.*
+*   `pip`
+*   [Graphviz](https://graphviz.org/download/) (specifically the `dot` command) - *Required only for rendering visualizations to image formats (png, svg, etc.) using the `visualize` command.*
+*   An OpenAI API Key.
 
+**Install using pip:**
 
-**Steps:**
+```bash
+pip install codex-cli-studio
+```
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/michaelshapkin/codex-cli-studio.git
-    cd codex-cli-studio
-    ```
-2.  **Create and activate a virtual environment (Recommended):**
-    ```bash
-    python -m venv venv
-    source venv/bin/activate # On Windows use `venv\Scripts\activate`
-    ```
-3.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-4.  **Set up your OpenAI API Key:**
-    *   Create a file named `.env` in the project root (`codex-cli-studio/`).
-    *   Add your API key to the `.env` file:
-        ```
-        OPENAI_API_KEY='your_openai_api_key_here'
-        ```
-    *   *(This file is already in `.gitignore` and should NOT be committed.)*
+**Set up your OpenAI API Key:**
+The tool reads the API key from the OPENAI_API_KEY environment variable. 
+
+You can set it:
+* System-wide: Add export OPENAI_API_KEY='your_key_here' to your shell profile (.zshrc, .bashrc, etc.).
+* Per session: Run export OPENAI_API_KEY='your_key_here' in your terminal before using codex.
+* Using a .env file: Create a .env file in the directory where you run the codex command and add the line OPENAI_API_KEY='your_key_here'.
 
 ---
 
 ## ✨ Usage
-
-Once installed from source and with the virtual environment activated, run commands using `python -m codex_cli.main` followed by the command name and arguments:
+After installation, use the `codex` command:
 
 ```bash
 # General help
-python -m codex_cli.main --help
+codex --help
 
 # Explain a code snippet
-python -m codex_cli.main explain 'import sys; print(sys.argv[1])' --lang en
+codex explain 'import sys; print(sys.argv[1])' --lang en
 
 # Explain a file in detail
-python -m codex_cli.main explain ./codex_cli/main.py --detail detailed
+codex explain path/to/your/code.py --detail detailed
 
 # Generate a Python script
-python -m codex_cli.main script "read lines from data.txt and print them numbered" -t python
+codex script "read lines from data.txt and print them numbered" -t python
 
 # Generate a bash script (dry run only)
-python -m codex_cli.main script "delete all *.tmp files in /tmp" --dry-run
+codex script "delete all *.tmp files in /tmp" --dry-run
 
 # Visualize a Python file, saving as PNG
-python -m codex_cli.main visualize ./codex_cli/visualize.py -f png -o visualize_graph.png
+codex visualize path/to/visualize.py -f png -o visualize_graph.png
 
 # Explain a YAML config file
-python -m codex_cli.main config explain examples/test.yaml
+codex config explain path/to/config.yaml
 ```
-
-*(Note: The invocation name might change to just `codex` after publishing to PyPI).*
-
-*(Note: The invocation name might change to just `codex` after publishing to PyPI).*
 
 ---
 
@@ -169,7 +152,6 @@ Contributions, issues, and feature requests are welcome! Feel free to check [iss
 
 ## 📄 License
 Distributed under the MIT License. See `LICENSE` file for more information.
-*(You should add a LICENSE file to the repository)*
 
 ---
 
