@@ -48,35 +48,35 @@ The tool reads the API key from the OPENAI_API_KEY environment variable.
 
 You can set it:
 * System-wide: Add export OPENAI_API_KEY='your_key_here' to your shell profile (.zshrc, .bashrc, etc.).
-* Per session: Run export OPENAI_API_KEY='your_key_here' in your terminal before using codex.
-* Using a .env file: Create a .env file in the directory where you run the codex command and add the line OPENAI_API_KEY='your_key_here'.
+* Per session: Run export OPENAI_API_KEY='your_key_here' in your terminal before using cstudio.
+* Using a .env file: Create a .env file in the directory where you run the cstudio command and add the line OPENAI_API_KEY='your_key_here'.
 
 ---
 
 ## ✨ Usage
-After installation, use the `codex` command:
+After installation, use the `cstudio` command:
 
 ```bash
 # General help
-codex --help
+cstudio --help
 
 # Explain a code snippet
-codex explain 'import sys; print(sys.argv[1])' --lang en
+cstudio explain 'import sys; print(sys.argv[1])' --lang en
 
 # Explain a file in detail
-codex explain path/to/your/code.py --detail detailed
+cstudio explain path/to/your/code.py --detail detailed
 
 # Generate a Python script
-codex script "read lines from data.txt and print them numbered" -t python
+cstudio script "read lines from data.txt and print them numbered" -t python
 
 # Generate a bash script (dry run only)
-codex script "delete all *.tmp files in /tmp" --dry-run
+cstudio script "delete all *.tmp files in /tmp" --dry-run
 
 # Visualize a Python file, saving as PNG
-codex visualize path/to/visualize.py -f png -o visualize_graph.png
+cstudio visualize path/to/visualize.py -f png -o visualize_graph.png
 
 # Explain a YAML config file
-codex config explain path/to/config.yaml
+cstudio config explain path/to/config.yaml
 ```
 
 ---
