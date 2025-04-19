@@ -30,10 +30,13 @@ def explain_config(file_path: Path):
             # return
     except Exception as e:
         console.print(f"[bold red]Error reading file {file_path}: {e}[/bold red]")
+        # Note: Typer's `readable=True` might catch permission errors before this
         return
 
-    # --- Determine File Type (Simple version based on extension for the prompt) ---
+    # --- Determine File Type (Simple version based on extension/name for the prompt) ---
     file_extension = file_path.suffix.lower()
+    filename_lower = file_path.name.lower() # Get lower case filename
+
     # Basic type guessing, can be expanded significantly
     if file_extension in ['.yaml', '.yml']:
         config_type = "YAML"
@@ -44,13 +47,23 @@ def explain_config(file_path: Path):
     elif file_extension == '.ini':
         config_type = "INI"
     elif file_extension == '.conf':
-        # Could be Nginx, Apache, or generic. Let's be vague.
         config_type = "CONF-style"
     elif file_extension == '.xml':
         config_type = "XML"
+    # --- FIX: Handle common known filenames without extensions ---
+    elif filename_lower == 'dockerfile':
+        config_type = "Dockerfile"
+    elif filename_lower == 'makefile':
+         config_type = "Makefile"
+    # --- FIX: Use filename if extension is missing or unknown ---
+    elif not file_extension:
+         # If no extension, use the filename itself (maybe it's e.g. 'hosts')
+         config_type = f"'{filename_lower}' (no extension)"
     else:
-        config_type = f"'{file_extension}'" # Just use the extension if unknown
+         # Otherwise, use the extension
+         config_type = f"'{file_extension}'"
     # Note: This doesn't guarantee correctness, just helps the prompt.
+
 
     # --- Construct the Prompt ---
     prompt = f"""

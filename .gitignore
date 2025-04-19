@@ -51,4 +51,6 @@ MANIFEST
 # Test files
 .pytest_cache/
 .coverage
-htmlcov/
+htmlcov/demo_config.yml
+*.cast
+*.svg
