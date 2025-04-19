@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> A powerful suite of command-line tools powered by OpenAI Codex, built to supercharge productivity, learning, and automation for developers, DevOps, and students alike.
+> A powerful suite of command-line tools powered by OpenAI models, built to supercharge productivity, learning, and automation for developers, DevOps, and students alike.
 
 ---
 
