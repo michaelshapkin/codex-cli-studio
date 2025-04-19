@@ -1,9 +1,8 @@
-# codex_cli/main.py
-
 import typer
 from rich.console import Console
 import os
 from pathlib import Path # Import Path for type hinting
+from typing import Optional # Import Optional for type hinting
 from dotenv import load_dotenv
 
 # Import command handlers from respective modules
@@ -71,7 +70,7 @@ def script(
     """
     script_module.generate_script(task_description, output_type, dry_run)
 
-# --- NEW COMMAND: visualize ---
+# --- Updated visualize command with --format ---
 @app.command()
 def visualize(
     ctx: typer.Context,
@@ -88,16 +87,32 @@ def visualize(
         None, # Default is None (auto-filename)
         "--output",
         "-o",
-        help="Path to save the output DOT graph file (e.g., graph.gv). Defaults to <input_file_name>.gv.",
+        help="Path to save the output graph file (e.g., graph.gv, graph.png). Extension determines behavior if --format is not set.",
         writable=True, # Check if directory is writable
         resolve_path=True, # Converts to absolute path
+    ),
+    # --- NEW OPTION ---
+    output_format: Optional[str] = typer.Option( # Use Optional[str]
+        None, # Default is None, determined by output_file extension or defaults to DOT
+        "--format",
+        "-f",
+        help="Output format (e.g., png, svg, pdf, dot/gv). Requires Graphviz 'dot' command.",
+        case_sensitive=False,
     )
+    # --- END NEW OPTION ---
 ):
     """
-    🧠 Generate a function call graph visualization (as a DOT file) for a Python file.
+    🧠 Generate a function call graph visualization for a Python file.
     """
-    # Pass paths as strings to the handler function
-    visualize_module.generate_visualization(str(file_path), str(output_file) if output_file else None)
+    # Determine output path string if provided
+    final_output_path: Optional[str] = str(output_file) if output_file else None
+
+    # Call the handler with resolved paths and format
+    visualize_module.generate_visualization(
+        str(file_path),
+        output_dot_or_image_file=final_output_path,
+        output_format=output_format
+    )
 
 # --- Add other commands here in the future ---
 # @app.command()

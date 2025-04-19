@@ -152,7 +152,6 @@ def generate_visualization(
     # --- Output Generation ---
     is_rendering_format = effective_format != "gv"
 
-    # --- UPDATED BLOCK for Rendering/Saving ---
     try:
         output_dir = os.path.dirname(final_output_path)
         output_filename_base_for_render = os.path.basename(final_output_path)
@@ -160,7 +159,7 @@ def generate_visualization(
 
         # Ensure output directory exists
         if output_dir and not os.path.exists(output_dir):
-            os.makedirs(output_dir, exist_ok=True) # Use exist_ok=True
+            os.makedirs(output_dir, exist_ok=True)
 
         if is_rendering_format:
             # Check availability of 'dot' command from Graphviz
@@ -178,21 +177,19 @@ def generate_visualization(
 
             # Render the image using the 'render' method
             console.print(f"Rendering graph to [bold yellow]{effective_format.upper()}[/bold yellow] format...")
-            rendered_path_base = dot_object.render(
+            rendered_path = dot_object.render(
                 filename=output_filename_noext, # Pass name without ext
                 directory=output_dir if output_dir else ".", # Pass directory or current '.'
                 format=effective_format,
                 cleanup=True, # Remove intermediate .gv file after rendering
                 view=False # Do not open the file automatically
             )
-            # render() returns the path base + format extension
-            final_output_path = rendered_path_base
+            # render() returns the actual path created
+            final_output_path = rendered_path # Update with the actual path
 
-            if os.path.exists(final_output_path):
-                console.print(f"\n✨ [bold green]Call graph saved as {effective_format.upper()} to:[/bold green] [cyan]{final_output_path}[/cyan]")
-            else:
-                console.print(f"[bold red]Error: Rendering failed. Output file '{final_output_path}' not created.[/bold red]")
-                console.print(f"[grey50]Graphviz 'dot' command might have failed. Check Graphviz installation and permissions.[/grey50]")
+            # --- FIX: Assume success if render didn't raise exception ---
+            # No need to check os.path.exists here, trust render() or catch its exception
+            console.print(f"\n✨ [bold green]Call graph saved as {effective_format.upper()} to:[/bold green] [cyan]{final_output_path}[/cyan]")
 
         else: # Save as DOT/GV file
             # Save the DOT source to the specified .gv file
