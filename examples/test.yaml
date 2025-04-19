@@ -1,0 +1,19 @@
+# Simple server configuration example
+server:
+  host: "127.0.0.1"
+  port: 8080
+  workers: 4
+  logging:
+    level: "INFO"
+    file: "/var/log/app.log"
+
+database:
+  type: "postgresql"
+  uri: "postgresql://user:password@db.example.com:5432/mydatabase"
+  pool_size: 10
+
+features:
+  new_dashboard: true
+  api_throttling:
+    enabled: true
+    rate: "100/minute"
