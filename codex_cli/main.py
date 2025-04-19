@@ -1,3 +1,5 @@
+# codex_cli/main.py
+
 import typer
 from rich.console import Console
 import os
@@ -5,73 +7,56 @@ from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 
-# Import command handlers
+# Import handlers
 from . import explain as explain_module
 from . import script as script_module
 from . import visualize as visualize_module
-from . import config as config_module # Make sure this is imported
+from . import config as config_module
 
-# Load environment variables from .env file
 load_dotenv()
 
-# Initialize the main Typer application
+# --- FIX: Using single-line string with \n for epilog ---
 app = typer.Typer(
-    name="codex", # Shorter invocation name
+    name="codex",
     help="""🧰 Codex CLI Studio
 
     A powerful suite of CLI tools powered by OpenAI models.
     Supercharge productivity, learning, and automation.
     """,
-    add_completion=False, # Disable shell completion for simplicity
-    no_args_is_help=True, # Show help if no command is provided
-    rich_markup_mode="markdown", # Enable markdown in help/epilog
-    epilog="""
-
----
-**Examples:**
-
-```bash
-# Explain a Python file in detail
-codex explain path/to/your/code.py --detail detailed
-
-# Generate a bash script to list large files
-codex script "find all files larger than 100MB in /data" --type bash
-
-# Visualize function calls in a Python file as SVG
-codex visualize src/main.py -f svg -o docs/main_calls.svg
-
-# Explain a Docker Compose YAML file
-codex config explain docker-compose.yml
-
-# Use codex [command] --help for more information on a specific command.
-
-"""
+    add_completion=False,
+    no_args_is_help=True,
+    rich_markup_mode="markdown", # Keep markdown for **Examples:**
+    epilog=("\n---"
+            "\n**Examples:**"
+            "\n\n  # Explain a Python file in detail"
+            "\n  codex explain path/to/your/code.py --detail detailed"
+            "\n\n  # Generate a bash script to list large files"
+            "\n  codex script \"find all files larger than 100MB in /data\" --type bash"
+            "\n\n  # Visualize function calls in a Python file as SVG"
+            "\n  codex visualize src/main.py -f svg -o docs/main_calls.svg"
+            "\n\n  # Explain a Docker Compose YAML file"
+            "\n  codex config explain docker-compose.yml"
+            "\n\n---"
+            "\nUse `codex [command] --help` for more information."
+            )
 )
 
-
-# Initialize Rich Console for formatted output
 console = Console()
 
 # --- Explain Command ---
-# --- Explain Command ---
 @app.command(
-    name="explain", # Explicit command name
-    help="📖 Explain code, shell commands, or file content using AI.", # Short help
-    epilog="""
-
----
-**Examples:**
-
-```bash
-# Explain a code snippet (basic, English)
-codex explain 'print("Hello")'
-
-# Explain a shell command (detailed, Russian)
-codex explain 'grep -r "TODO" ./src' -d detailed -l ru
-
-# Explain a file (basic, Spanish)
-codex explain path/to/script.js --lang es
-"""
+    name="explain",
+    help="📖 Explain code, shell commands, or file content using AI.",
+    epilog=("\n---"
+            "\n**Examples:**"
+            "\n\n  # Explain a code snippet (basic, English)"
+            "\n  codex explain 'print(\"Hello\")'"
+            "\n\n  # Explain a shell command (detailed, Russian)"
+            "\n  codex explain 'grep -r \"TODO\" ./src' -d detailed -l ru"
+            "\n\n  # Explain a file (basic, Spanish)"
+            "\n  codex explain path/to/script.js --lang es"
+            "\n---"
+            )
 )
 def explain(
     ctx: typer.Context,
@@ -79,33 +64,24 @@ def explain(
     detail: str = typer.Option("basic", "--detail", "-d", help="Level of detail: 'basic' or 'detailed'.", case_sensitive=False),
     lang: str = typer.Option("en", "--lang", "-l", help="Language code for the explanation (e.g., 'en', 'ru', 'es', 'ja').", case_sensitive=False)
 ):
-    """📖 Explain a piece of code or a shell command using an AI model."""
+    """Process the explain command."""
     explain_module.explain_code(input_str, detail, lang)
-
-
 
 # --- Script Command ---
 @app.command(
     name="script",
-    help="⚙️ Generate a script (Bash, Python, etc.) from a natural language description.",
-    epilog="""
-
----
-**Examples:**
-
-```bash
-# Generate default (bash) script
-codex script "list all .py files"
-
-# Generate Python script
-codex script "read csv data.csv and print first column" -t python
-
-# Generate PowerShell script (dry run)
-codex script "get running processes" --type powershell --dry-run
-
-"""
+    help="⚙️ Generate scripts (Bash, Python, etc.) from descriptions.",
+    epilog=("\n---"
+            "\n**Examples:**"
+            "\n\n  # Generate default (bash) script"
+            "\n  codex script \"list all .py files\""
+            "\n\n  # Generate Python script"
+            "\n  codex script \"read csv data.csv and print first column\" -t python"
+            "\n\n  # Generate PowerShell script (dry run)"
+            "\n  codex script \"get running processes\" --type powershell --dry-run"
+            "\n---"
+            )
 )
-
 def script(
     ctx: typer.Context,
     task_description: str = typer.Argument(..., help="The task description in natural language."),
@@ -115,27 +91,21 @@ def script(
     """Process the script command."""
     script_module.generate_script(task_description, output_type, dry_run)
 
-
-
 # --- Visualize Command ---
 @app.command(
     name="visualize",
-    help="🧠 Generate a function call graph visualization for a Python file.",
-     epilog="""
-
----
-**Examples:**
-
-```bash
-# Generate DOT file (default)
-codex visualize path/to/module.py -o graph.gv
-
-# Generate PNG image directly
-codex visualize path/to/module.py -f png -o graph.png
-
-# Generate SVG image
-codex visualize path/to/module.py --format svg
-"""
+    help="🧠 Generate a function call graph for a Python file (DOT/image).",
+     epilog=("\n---"
+             "\n**Examples:**"
+             "\n\n  # Generate DOT file (default)"
+             "\n  codex visualize path/to/module.py -o graph.gv"
+             "\n\n  # Generate PNG image directly"
+             "\n  codex visualize path/to/module.py -f png -o graph.png"
+             "\n\n  # Generate SVG image"
+             "\n  codex visualize path/to/module.py --format svg"
+             "\n---"
+             "\nRequires Graphviz 'dot' command for image formats."
+             )
 )
 def visualize(
     ctx: typer.Context,
@@ -147,38 +117,30 @@ def visualize(
     final_output_path: Optional[str] = str(output_file) if output_file else None
     visualize_module.generate_visualization(str(file_path), output_dot_or_image_file=final_output_path, output_format=output_format)
 
-
 # --- Config Command Group ---
 config_app = typer.Typer(
-    name="config", # Subcommand group name
+    name="config",
     help="🔧 Work with configuration files.",
-    no_args_is_help=True, # Show help for 'config' if no subcommand is given
-    rich_markup_mode="markdown" # Enable markdown for this group's help/epilogs
+    no_args_is_help=True,
+    rich_markup_mode="markdown",
 )
-# Register the subcommand group with the main app
 app.add_typer(config_app, name="config")
 
 # --- Config Explain Subcommand ---
 @config_app.command(
-    "explain", # Name of the subcommand within the 'config' group
+    "explain",
     help="📖 Explain a configuration file using an AI model.",
-    epilog="""
-
----
-**Examples:**
-
-```bash
-# Explain a standard docker-compose file
-codex config explain docker-compose.yml
-
-# Explain an nginx config
-codex config explain /etc/nginx/nginx.conf
-
-# Explain a TOML config
-codex config explain pyproject.toml
-"""
+    epilog=("\n---"
+            "\n**Examples:**"
+            "\n\n  # Explain a standard docker-compose file"
+            "\n  codex config explain docker-compose.yml"
+            "\n\n  # Explain an nginx config"
+            "\n  codex config explain /etc/nginx/nginx.conf"
+            "\n\n  # Explain a TOML config"
+            "\n  codex config explain pyproject.toml"
+            "\n---"
+            )
 )
-
 def config_explain(
     ctx: typer.Context,
     file_path: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True, help="Path to the configuration file to explain."),
@@ -186,19 +148,10 @@ def config_explain(
     """Process the config explain subcommand."""
     config_module.explain_config(file_path)
 
-
-
-# --- Placeholder for future 'config' subcommands ---
-# @config_app.command("edit")
-# def config_edit(...):
-#     console.print("Config edit command not implemented yet.")
-
-
 # --- Application Runner ---
 def run():
     """Main entry point for the CLI application."""
     app()
 
 if __name__ == "__main__":
-    # Allows the script to be run directly using `python -m codex_cli.main`
     run()

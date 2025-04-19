@@ -54,3 +54,4 @@ MANIFEST
 htmlcov/demo_config.yml
 *.cast
 *.svg
+demo_config.yml
