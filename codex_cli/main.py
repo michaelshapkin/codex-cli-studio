@@ -61,35 +61,28 @@ def explain(
 def script(
     ctx: typer.Context, # Typer context
     task_description: str = typer.Argument(..., help="The task description in natural language."),
-    # Option to specify the desired script type
+    # Option for script type
     output_type: str = typer.Option(
         "bash", # Default script type
         "--type",
         "-t",
-        # Help text dynamically lists supported types from the script module
         help=f"Output script type. Supported: {', '.join(script_module.SUPPORTED_SCRIPT_TYPES)}.",
-        case_sensitive=False # Allow case-insensitive input like 'Python', 'bash'
-        ),
-    # --- Future options ---
-    # dry_run: bool = typer.Option(False, "--dry-run", help="Only show the generated script, don't execute."),
+        case_sensitive=False
+    ),
+    # --- NEW OPTION ---
+    dry_run: bool = typer.Option(
+        False, # Default value is False
+        "--dry-run",
+        help="Only generate and display the script, do not execute (execution not implemented yet).",
+        is_flag=True # Makes it a boolean flag: presence means True
+    )
 ):
     """
     ⚙️ Generate a script (Bash, Python, etc.) from a natural language description.
     """
-    # Call the script generation handler, passing the task and desired type
-    script_module.generate_script(task_description, output_type)
+    # --- UPDATED CALL: Pass dry_run option ---
+    script_module.generate_script(task_description, output_type, dry_run)
 
-# --- Add other commands here in the future ---
-# @app.command()
-# def visualize(...):
-#     visualize_module.generate_visualization(...)
-
-# @app.command()
-# def config(...):
-#     config_module.handle_config(...)
-
-
-# --- Application Runner ---
 
 def run():
     """Main entry point for the CLI application."""

@@ -1,42 +1,29 @@
 import os
-import re # Import regular expressions module for more robust cleaning
+import re
 from rich.console import Console
 from rich.syntax import Syntax
 from .core.openai_utils import get_openai_response
 
-# Initialize console
 console = Console()
-
-# Define supported script types
 SUPPORTED_SCRIPT_TYPES = ["bash", "python", "powershell"]
 
 def clean_generated_code(code: str, language: str) -> str:
     """Removes potential markdown code fences and leading/trailing whitespace."""
-    if not code:
-        return ""
-
-    code = code.strip() # Remove leading/trailing whitespace first
-
-    # Pattern to match ```language[...]``` or ```[...]``` at start and ``` at end
-    # Allows for optional language specifier and handles variations in newlines
+    if not code: return ""
+    code = code.strip()
     pattern = re.compile(r"^\s*```(?:\w+\s*?\n)?(.*?)\n?```\s*$", re.DOTALL | re.IGNORECASE)
     match = pattern.match(code)
+    return match.group(1).strip() if match else code
 
-    if match:
-        # If pattern matches, return the captured group (the actual code)
-        return match.group(1).strip()
-    else:
-        # If no markdown fences found, return the original stripped code
-        return code
-
-
-def generate_script(task_description: str, output_type: str = "bash"):
+# --- UPDATED SIGNATURE: Added dry_run ---
+def generate_script(task_description: str, output_type: str = "bash", dry_run: bool = False):
     """
     Generates a script based on a natural language task description.
 
     Args:
         task_description: The description of the task for the script.
         output_type: The desired script type (e.g., "bash", "python"). Defaults to "bash".
+        dry_run: If True, indicates that the script should only be displayed (currently always true).
     """
     output_type_lower = output_type.lower()
     if output_type_lower not in SUPPORTED_SCRIPT_TYPES:
@@ -45,8 +32,11 @@ def generate_script(task_description: str, output_type: str = "bash"):
         return
 
     console.print(f"Generating [bold yellow]{output_type_lower}[/bold yellow] script for task: '{task_description}'...")
+    # --- Add message if dry_run is active ---
+    if dry_run:
+        console.print("[cyan]--dry-run active: Script will only be displayed.[/cyan]")
 
-    # --- Construct the Prompt ---
+    # Construct the prompt
     prompt = f"""
     You are an expert script generator. Your task is to generate a functional and safe script based on the user's request.
 
@@ -63,30 +53,26 @@ def generate_script(task_description: str, output_type: str = "bash"):
     6.  IMPORTANT: Output ONLY the raw script code itself. Do not include *any* surrounding text, explanations, or markdown formatting like ```script_type ... ```. Just the code.
 
     Begin script code:
-    """ # Added stronger wording and moved instruction lower
+    """
 
-    # --- Get Script from OpenAI ---
     generated_code = get_openai_response(prompt, model="gpt-4o")
-
-    # --- Post-process the response ---
     processed_code = clean_generated_code(generated_code, output_type_lower) if generated_code else ""
 
-    # --- Display the Generated Script ---
     if processed_code and processed_code != "Model returned an empty response.":
         console.print("\n✨ [bold green]Generated Script:[/bold green]")
-
-        lexer_map = {
-            "bash": "bash",
-            "python": "python",
-            "powershell": "powershell",
-        }
+        lexer_map = {"bash": "bash", "python": "python", "powershell": "powershell"}
         lexer_name = lexer_map.get(output_type_lower, "text")
-
         syntax = Syntax(processed_code, lexer_name, theme="default", line_numbers=True)
         console.print(syntax)
-
         console.print("\n[bold yellow]⚠️ Warning:[/bold yellow] [yellow]Always review generated scripts carefully before executing them, especially if they involve file operations or system changes.[/yellow]")
     else:
         console.print(f"[bold red]Failed to generate the {output_type_lower} script.[/bold red]")
-        if generated_code and not processed_code: # Show original if cleaning failed somehow
+        if generated_code and not processed_code:
              console.print(f"[grey50]Model original (unprocessed) response: {generated_code}[/grey50]")
+
+    # --- Placeholder for future execution logic ---
+    # if not dry_run:
+    #     # Execute the script here (use with extreme caution!)
+    #     # Consider saving to file and running, or using subprocess
+    #     console.print("\n[grey50]Execution logic not implemented.[/grey50]")
+    # --- END Placeholder ---

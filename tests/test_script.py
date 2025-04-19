@@ -23,6 +23,7 @@ print("This code has fences")"""
 
 # --- Test Suite for 'script' command ---
 
+# --- FIX: Moved parametrize decorator to be directly above the correct function ---
 @pytest.mark.parametrize(
     "script_type, mock_response",
     [
@@ -39,7 +40,6 @@ def test_script_command_success(mocker, script_type, mock_response):
 
     # Assertions
     assert result.exit_code == 0
-    # --- FIX: More robust check for mock response in output ---
     # Check if the *first* line of the mock response is present, handles single/multi-line
     assert mock_response.splitlines()[0] in result.stdout
     assert "Generated Script:" in result.stdout
@@ -47,7 +47,6 @@ def test_script_command_success(mocker, script_type, mock_response):
     mock_api_call.assert_called_once()
     args, kwargs = mock_api_call.call_args
     assert f"Desired Script Type: {script_type}" in args[0]
-
 
 def test_script_command_default_type(mocker):
     """Test that the default script type is bash when --type is omitted."""
@@ -57,7 +56,8 @@ def test_script_command_default_type(mocker):
     result = runner.invoke(app, ["script", task]) # No --type flag
 
     assert result.exit_code == 0
-    assert MOCK_BASH_SCRIPT.splitlines()[1] in result.stdout # Check for bash script content
+    # --- FIX: Check first line for consistency ---
+    assert MOCK_BASH_SCRIPT.splitlines()[0] in result.stdout # Check for bash script content
     assert "Generated Script:" in result.stdout
     mock_api_call.assert_called_once()
     args, kwargs = mock_api_call.call_args
@@ -93,6 +93,23 @@ def test_script_command_api_failure(mocker):
     assert f"Failed to generate the {script_type} script" in result.stdout
     assert "Generated Script:" not in result.stdout
     mock_api_call.assert_called_once()
+
+# --- FIX: Moved this test below the parametrized one ---
+def test_script_command_with_dry_run(mocker):
+    """Test that the --dry-run flag is recognized."""
+    # Mock API call (behavior doesn't change yet, but need to mock)
+    mock_api_call = mocker.patch('codex_cli.script.get_openai_response', return_value=MOCK_BASH_SCRIPT)
+    task = "dry run test"
+
+    # Invoke command with the --dry-run flag
+    result = runner.invoke(app, ["script", task, "--dry-run"])
+
+    # Assertions
+    assert result.exit_code == 0
+    assert "--dry-run active: Script will only be displayed." in result.stdout
+    assert "Generated Script:" in result.stdout # Script should still be generated
+    mock_api_call.assert_called_once() # API should still be called
+
 
 # --- Tests for the clean_generated_code utility function ---
 
