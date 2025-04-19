@@ -7,17 +7,18 @@ from pathlib import Path
 from typing import Optional
 from dotenv import load_dotenv
 
-# Import handlers
+# Import command handlers
 from . import explain as explain_module
 from . import script as script_module
 from . import visualize as visualize_module
 from . import config as config_module
 
+# Load environment variables from .env file
 load_dotenv()
 
-# --- FIX: Using single-line string with \n for epilog ---
+# Initialize the main Typer application
 app = typer.Typer(
-    name="codex",
+    name="cstudio", # Correct invocation name
     help="""🧰 Codex CLI Studio
 
     A powerful suite of CLI tools powered by OpenAI models.
@@ -25,19 +26,21 @@ app = typer.Typer(
     """,
     add_completion=False,
     no_args_is_help=True,
-    rich_markup_mode="markdown", # Keep markdown for **Examples:**
+    rich_markup_mode="markdown",
+    # --- FIX: Corrected examples to use 'cstudio' ---
     epilog=("\n---"
             "\n**Examples:**"
             "\n\n  # Explain a Python file in detail"
-            "\n  codex explain path/to/your/code.py --detail detailed"
+            "\n  cstudio explain path/to/your/code.py --detail detailed"
             "\n\n  # Generate a bash script to list large files"
-            "\n  codex script \"find all files larger than 100MB in /data\" --type bash"
+            "\n  cstudio script \"find all files larger than 100MB in /data\" --type bash"
             "\n\n  # Visualize function calls in a Python file as SVG"
-            "\n  codex visualize src/main.py -f svg -o docs/main_calls.svg"
+            "\n  cstudio visualize src/main.py -f svg -o docs/main_calls.svg"
             "\n\n  # Explain a Docker Compose YAML file"
-            "\n  codex config explain docker-compose.yml"
+            "\n  cstudio config explain docker-compose.yml"
             "\n\n---"
-            "\nUse `codex [command] --help` for more information."
+            # --- FIX: Corrected help text ---
+            "\nUse `cstudio [command] --help` for more information."
             )
 )
 
@@ -47,14 +50,15 @@ console = Console()
 @app.command(
     name="explain",
     help="📖 Explain code, shell commands, or file content using AI.",
+    # --- FIX: Corrected examples to use 'cstudio' ---
     epilog=("\n---"
             "\n**Examples:**"
             "\n\n  # Explain a code snippet (basic, English)"
-            "\n  codex explain 'print(\"Hello\")'"
+            "\n  cstudio explain 'print(\"Hello\")'"
             "\n\n  # Explain a shell command (detailed, Russian)"
-            "\n  codex explain 'grep -r \"TODO\" ./src' -d detailed -l ru"
+            "\n  cstudio explain 'grep -r \"TODO\" ./src' -d detailed -l ru"
             "\n\n  # Explain a file (basic, Spanish)"
-            "\n  codex explain path/to/script.js --lang es"
+            "\n  cstudio explain path/to/script.js --lang es"
             "\n---"
             )
 )
@@ -71,14 +75,15 @@ def explain(
 @app.command(
     name="script",
     help="⚙️ Generate scripts (Bash, Python, etc.) from descriptions.",
+     # --- FIX: Corrected examples to use 'cstudio' ---
     epilog=("\n---"
             "\n**Examples:**"
             "\n\n  # Generate default (bash) script"
-            "\n  codex script \"list all .py files\""
+            "\n  cstudio script \"list all .py files\""
             "\n\n  # Generate Python script"
-            "\n  codex script \"read csv data.csv and print first column\" -t python"
+            "\n  cstudio script \"read csv data.csv and print first column\" -t python"
             "\n\n  # Generate PowerShell script (dry run)"
-            "\n  codex script \"get running processes\" --type powershell --dry-run"
+            "\n  cstudio script \"get running processes\" --type powershell --dry-run"
             "\n---"
             )
 )
@@ -95,14 +100,15 @@ def script(
 @app.command(
     name="visualize",
     help="🧠 Generate a function call graph for a Python file (DOT/image).",
+    # --- FIX: Corrected examples to use 'cstudio' ---
      epilog=("\n---"
              "\n**Examples:**"
              "\n\n  # Generate DOT file (default)"
-             "\n  codex visualize path/to/module.py -o graph.gv"
+             "\n  cstudio visualize path/to/module.py -o graph.gv"
              "\n\n  # Generate PNG image directly"
-             "\n  codex visualize path/to/module.py -f png -o graph.png"
+             "\n  cstudio visualize path/to/module.py -f png -o graph.png"
              "\n\n  # Generate SVG image"
-             "\n  codex visualize path/to/module.py --format svg"
+             "\n  cstudio visualize path/to/module.py --format svg"
              "\n---"
              "\nRequires Graphviz 'dot' command for image formats."
              )
@@ -130,14 +136,15 @@ app.add_typer(config_app, name="config")
 @config_app.command(
     "explain",
     help="📖 Explain a configuration file using an AI model.",
+    # --- FIX: Corrected examples to use 'cstudio' ---
     epilog=("\n---"
             "\n**Examples:**"
             "\n\n  # Explain a standard docker-compose file"
-            "\n  codex config explain docker-compose.yml"
+            "\n  cstudio config explain docker-compose.yml"
             "\n\n  # Explain an nginx config"
-            "\n  codex config explain /etc/nginx/nginx.conf"
+            "\n  cstudio config explain /etc/nginx/nginx.conf"
             "\n\n  # Explain a TOML config"
-            "\n  codex config explain pyproject.toml"
+            "\n  cstudio config explain pyproject.toml"
             "\n---"
             )
 )

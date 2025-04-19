@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 # Project metadata
 [project]
 name = "codex-cli-studio"
-version = "0.1.1" # Initial version
+version = "0.1.2" # Initial version
 authors = [
     { name="Michael Shapkin" },
     # You can add more authors if needed
