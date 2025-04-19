@@ -3,13 +3,14 @@
 import typer
 from rich.console import Console
 import os
+from pathlib import Path # Import Path for type hinting
 from dotenv import load_dotenv
 
 # Import command handlers from respective modules
 from . import explain as explain_module
 from . import script as script_module
+from . import visualize as visualize_module # Added visualize module import
 # Future command modules:
-# from . import visualize as visualize_module
 # from . import config as config_module
 
 # Load environment variables from .env file at the start
@@ -27,35 +28,26 @@ console = Console()
 
 # --- Command Definitions ---
 
-
 @app.command()
 def explain(
     ctx: typer.Context, # Typer context
     input_str: str = typer.Argument(..., help="The code snippet, shell command, or file path to explain."),
-    
+    # Options for explain command
     detail: str = typer.Option(
-        "basic", # Default value if option not provided
-        "--detail",
-        "-d",
+        "basic", "--detail", "-d",
         help="Level of detail for the explanation: 'basic' or 'detailed'.",
-        case_sensitive=False, # Allow 'Basic', 'Detailed', etc.
+        case_sensitive=False,
     ),
     lang: str = typer.Option(
-        "en", # Default language code
-        "--lang",
-        "-l",
+        "en", "--lang", "-l",
         help="Language code for the explanation (e.g., 'en', 'ru', 'es', 'ja').",
-        case_sensitive=False, # Allow 'EN', 'ru', etc.
+        case_sensitive=False,
     )
-    
 ):
     """
     📖 Explain a piece of code or a shell command using an AI model.
     """
-    # --- UPDATED CALL: Pass options to the handler ---
     explain_module.explain_code(input_str, detail, lang)
-
-
 
 @app.command()
 def script(
@@ -63,26 +55,57 @@ def script(
     task_description: str = typer.Argument(..., help="The task description in natural language."),
     # Option for script type
     output_type: str = typer.Option(
-        "bash", # Default script type
-        "--type",
-        "-t",
+        "bash", "--type", "-t",
         help=f"Output script type. Supported: {', '.join(script_module.SUPPORTED_SCRIPT_TYPES)}.",
         case_sensitive=False
     ),
-    # --- NEW OPTION ---
+    # Option for dry run
     dry_run: bool = typer.Option(
-        False, # Default value is False
-        "--dry-run",
+        False, "--dry-run",
         help="Only generate and display the script, do not execute (execution not implemented yet).",
-        is_flag=True # Makes it a boolean flag: presence means True
+        is_flag=True # Use bool annotation instead in future Typer versions
     )
 ):
     """
     ⚙️ Generate a script (Bash, Python, etc.) from a natural language description.
     """
-    # --- UPDATED CALL: Pass dry_run option ---
     script_module.generate_script(task_description, output_type, dry_run)
 
+# --- NEW COMMAND: visualize ---
+@app.command()
+def visualize(
+    ctx: typer.Context,
+    file_path: Path = typer.Argument(
+        ..., # Required argument
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True, # Converts to absolute path
+        help="Path to the Python file (.py) to visualize."
+    ),
+    output_file: Path = typer.Option(
+        None, # Default is None (auto-filename)
+        "--output",
+        "-o",
+        help="Path to save the output DOT graph file (e.g., graph.gv). Defaults to <input_file_name>.gv.",
+        writable=True, # Check if directory is writable
+        resolve_path=True, # Converts to absolute path
+    )
+):
+    """
+    🧠 Generate a function call graph visualization (as a DOT file) for a Python file.
+    """
+    # Pass paths as strings to the handler function
+    visualize_module.generate_visualization(str(file_path), str(output_file) if output_file else None)
+
+# --- Add other commands here in the future ---
+# @app.command()
+# def config(...):
+#     config_module.handle_config(...)
+
+
+# --- Application Runner ---
 
 def run():
     """Main entry point for the CLI application."""
