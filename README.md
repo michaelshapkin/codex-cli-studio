@@ -16,7 +16,10 @@ All in one open source CLI package.
 
 ---
 
+## 👀 Demo
 ![Codex CLI Studio Demo](codex-cli-studio-demo.svg)
+
+---
 
 ## 🛠️ Modules
 
