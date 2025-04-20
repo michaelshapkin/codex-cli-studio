@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 # Project metadata
 [project]
 name = "codex-cli-studio"
-version = "0.1.2" # Initial version
+version = "0.1.2" # Current version
 authors = [
     { name="Michael Shapkin" },
     # You can add more authors if needed
@@ -34,25 +34,34 @@ classifiers = [
     "Environment :: Console",
     "Operating System :: OS Independent",
 ]
-# Dependencies listed here will be installed by pip
+# Core dependencies required for the tool to run
 dependencies = [
     "typer[all]>=0.12.3,<1.0.0", # Includes click and rich
     "openai>=1.30.1,<2.0.0",
     "python-dotenv>=1.0.1,<2.0.0",
     "graphviz>=0.20.1,<1.0.0", # For visualize module
-    # Add other direct dependencies here if needed
 ]
 
-# Optional dependencies (e.g., for development or specific features)
-# [project.optional-dependencies]
-# dev = ["pytest", "pytest-mock"]
+# --- ADDED/UPDATED SECTION ---
+# Optional dependencies, installable via pip install .[dev]
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2,<9.0",       # For running tests
+    "pytest-mock>=3.12,<4.0", # For mocking API calls in tests
+    # Future dev tools can be added here:
+    # "black",                # Code formatter
+    # "ruff",                 # Linter
+    # "mkdocs",               # Documentation generator
+]
+# --- END ADDED/UPDATED SECTION ---
 
 # Define the command-line script entry point
 [project.scripts]
-cstudio = "codex_cli.main:run" # Command 'cstudio' will execute the 'run' function in 'codex_cli/main.py'
+cstudio = "codex_cli.main:run" # Command 'cstudio' executes run() in codex_cli/main.py
 
 # Project URLs (optional but recommended)
 [project.urls]
 Homepage = "https://github.com/michaelshapkin/codex-cli-studio"
 Repository = "https://github.com/michaelshapkin/codex-cli-studio"
-# Issues = "https://github.com/michaelshapkin/codex-cli-studio/issues" # Uncomment if you use issues
+Discussions = "https://github.com/michaelshapkin/codex-cli-studio/discussions" # Added Discussions link
+# Issues = "https://github.com/michaelshapkin/codex-cli-studio/issues" # Uncomment if you use issues actively
