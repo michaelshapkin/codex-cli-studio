@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.13' # Specify Python version
-          # No pip caching for simplicity for now
+          # No pip caching for now to avoid issues
 
       # Step 3: Install the CLI tool from PyPI
       - name: Install Codex CLI Studio
@@ -53,12 +53,11 @@ jobs:
             exit 0
           else
             echo "Code snippet extracted."
-            # --- FIX: Use delimiter for multiline output ---
-            DELIMITER=$(openssl rand -hex 16) # Generate a random delimiter
-            echo "code_snippet<<${DELIMITER}" >> $GITHUB_OUTPUT # Start multiline output
-            echo "$CODE_SNIPPET" >> $GITHUB_OUTPUT               # The actual snippet
-            echo "${DELIMITER}" >> $GITHUB_OUTPUT                # End multiline output
-            # --- END FIX ---
+            # Save the multiline code snippet to a step output variable safely using a delimiter
+            DELIMITER=$(openssl rand -hex 16)
+            echo "code_snippet<<${DELIMITER}" >> $GITHUB_OUTPUT
+            echo "$CODE_SNIPPET" >> $GITHUB_OUTPUT
+            echo "${DELIMITER}" >> $GITHUB_OUTPUT
           fi
 
       # Step 5: Run 'cstudio explain' command if code was extracted
@@ -72,27 +71,36 @@ jobs:
           # Set environment variables to potentially simplify terminal output for parsing
           TERM: dumb
           NO_COLOR: 1
+        # --- UPDATED RUN SCRIPT ---
         run: |
-          # Execute the command using process substitution for multiline input
-          # Capture the full output (stdout and potentially stderr if redirected)
-          EXPLANATION=$(cstudio explain <(echo "${{ steps.extract_code.outputs.code_snippet }}") 2>&1)
-          # Check the exit code of the command
+          # Use pipe to pass code from the output variable to cstudio explain's stdin (-)
+          # Redirect both stdout and stderr to a log file to capture everything
+          echo "${{ steps.extract_code.outputs.code_snippet }}" | cstudio explain - > explanation_output.log 2>&1
+          # Capture the exit code of the cstudio command
           EXIT_CODE=$?
+
+          # Read the captured output from the log file
+          EXPLANATION=$(cat explanation_output.log)
+
+          # Check if the command failed
           if [ $EXIT_CODE -ne 0 ]; then
             echo "cstudio explain command failed with exit code $EXIT_CODE."
-            # Save the error output
-            echo "output<<EOF_ERR" >> $GITHUB_OUTPUT # Use different delimiter for error
+            # Save the error output using a delimiter
+            DELIMITER_ERR=$(openssl rand -hex 16)
+            echo "output<<${DELIMITER_ERR}" >> $GITHUB_OUTPUT
             echo "Error running cstudio explain. Output:" >> $GITHUB_OUTPUT
-            echo "$EXPLANATION" >> $GITHUB_OUTPUT # Include the command's output/error
-            echo "EOF_ERR" >> $GITHUB_OUTPUT
+            echo "$EXPLANATION" >> $GITHUB_OUTPUT # Include the captured output/error
+            echo "${DELIMITER_ERR}" >> $GITHUB_OUTPUT
             exit 0 # Exit step gracefully to allow comment posting
           fi
+
           echo "Explanation generated."
           # Save the successful explanation output using a delimiter
           DELIMITER_OUT=$(openssl rand -hex 16)
           echo "output<<${DELIMITER_OUT}" >> $GITHUB_OUTPUT
           echo "$EXPLANATION" >> $GITHUB_OUTPUT
           echo "${DELIMITER_OUT}" >> $GITHUB_OUTPUT
+        # --- END UPDATED RUN SCRIPT ---
 
       # Step 6: Post the result (explanation or error) as a comment on the issue
       - name: Create Comment on Issue
