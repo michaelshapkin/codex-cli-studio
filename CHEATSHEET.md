@@ -104,3 +104,30 @@ Quick reference for common commands used during development.
 ---
 
 *Remember to keep your `venv` activated during development!*
+
+---
+
+## 📚 Documentation (Sphinx)
+
+*   **Location:** `/docs` directory.
+*   **Configuration:** `docs/conf.py`.
+*   **Content Files:** `docs/*.md` (or `.rst`).
+
+*   **Install Doc Dependencies (if not already done):**
+    ```bash
+    pip install -e '.[dev]'
+    ```
+*   **Build HTML Locally:**
+    ```bash
+    cd docs
+    make html
+    # View result: open docs/_build/html/index.html
+    cd ..
+    ```
+*   **Clean Build Files:**
+    ```bash
+    cd docs
+    make clean
+    cd ..
+    ```
+*   **(Auto-Deploy):** Push to `main` triggers GitHub Action to deploy to GitHub Pages (branch `gh-pages`).
