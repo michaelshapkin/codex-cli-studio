@@ -1,106 +1,146 @@
 # .github/workflows/issue_explainer.yml
 name: Codex CLI Explain Issue
 
+# Trigger when an issue is labeled with 'ask-cstudio-explain'
 on:
   issues:
     types: [labeled]
 
+# Permissions needed by the workflow
 permissions:
-  issues: write
-  contents: read # Keep read permission just in case checkout needs it explicitly
+  issues: write    # Allows writing comments to issues
+  contents: read   # Allows checking out the repository code
 
 jobs:
   explain_code_in_issue:
+    # Run job only if the triggering label name matches
     if: github.event.label.name == 'ask-cstudio-explain'
+    # Use the latest Ubuntu runner environment
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Check out the repository code
       - name: Check out repository code
         uses: actions/checkout@v4
 
-      # --- FIX: Completely remove cache parameters ---
+      # Step 2: Set up Python environment
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13' # Or your preferred version (3.12, 3.13)
-          # No 'cache' or 'cache-dependency-path' here
+          python-version: '3.13' # Specify Python version
+          # No pip caching for simplicity for now
 
+      # Step 3: Install the CLI tool from PyPI
       - name: Install Codex CLI Studio
         run: |
           python -m pip install --upgrade pip
-          # Install directly from PyPI, no local build needed here
-          pip install codex-cli-studio
+          pip install codex-cli-studio # Install the latest published version
 
-      # ... (Rest of the steps remain the same) ...
+      # Step 4: Extract code snippet from the issue body
       - name: Extract Code Snippet from Issue Body
-        id: extract_code
+        id: extract_code # Assign an ID to reference outputs later
         run: |
+          # Get issue body, remove potential carriage returns
           ISSUE_BODY=$(echo "${{ github.event.issue.body }}" | sed 's/\\r//g')
+          # Extract content between the first pair of ``` fences using awk
           CODE_SNIPPET=$(echo "$ISSUE_BODY" | awk '/^```(\w*)/{f=1;next} /^```/{f=0; exit} f{print}')
+          # Check if code snippet is empty
           if [[ -z "$CODE_SNIPPET" ]]; then
             echo "No code block found in issue body. Setting error message."
+            # Set an output variable to indicate the error
             echo "error_message=No fenced code block (\`\`\` ... \`\`\`) found in the issue body." >> $GITHUB_OUTPUT
-            exit 0 # Gracefully exit step
+            # Exit step gracefully (job continues based on 'if' conditions later)
+            exit 0
           else
             echo "Code snippet extracted."
-            echo "code_snippet<<EOF" >> $GITHUB_OUTPUT
-            echo "$CODE_SNIPPET" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
+            # --- FIX: Use delimiter for multiline output ---
+            DELIMITER=$(openssl rand -hex 16) # Generate a random delimiter
+            echo "code_snippet<<${DELIMITER}" >> $GITHUB_OUTPUT # Start multiline output
+            echo "$CODE_SNIPPET" >> $GITHUB_OUTPUT               # The actual snippet
+            echo "${DELIMITER}" >> $GITHUB_OUTPUT                # End multiline output
+            # --- END FIX ---
           fi
 
+      # Step 5: Run 'cstudio explain' command if code was extracted
       - name: Run cstudio explain
-        id: cstudio
+        id: cstudio # Assign an ID
+        # Only run if the previous step did not set an error message
         if: steps.extract_code.outputs.error_message == null
         env:
+          # Provide the OpenAI API key from repository secrets
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Set environment variables to potentially simplify terminal output for parsing
           TERM: dumb
           NO_COLOR: 1
         run: |
+          # Execute the command using process substitution for multiline input
+          # Capture the full output (stdout and potentially stderr if redirected)
           EXPLANATION=$(cstudio explain <(echo "${{ steps.extract_code.outputs.code_snippet }}") 2>&1)
+          # Check the exit code of the command
           EXIT_CODE=$?
           if [ $EXIT_CODE -ne 0 ]; then
             echo "cstudio explain command failed with exit code $EXIT_CODE."
-            echo "output<<EOF" >> $GITHUB_OUTPUT
+            # Save the error output
+            echo "output<<EOF_ERR" >> $GITHUB_OUTPUT # Use different delimiter for error
             echo "Error running cstudio explain. Output:" >> $GITHUB_OUTPUT
-            echo "$EXPLANATION" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-            exit 0
+            echo "$EXPLANATION" >> $GITHUB_OUTPUT # Include the command's output/error
+            echo "EOF_ERR" >> $GITHUB_OUTPUT
+            exit 0 # Exit step gracefully to allow comment posting
           fi
           echo "Explanation generated."
-          echo "output<<EOF" >> $GITHUB_OUTPUT
+          # Save the successful explanation output using a delimiter
+          DELIMITER_OUT=$(openssl rand -hex 16)
+          echo "output<<${DELIMITER_OUT}" >> $GITHUB_OUTPUT
           echo "$EXPLANATION" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "${DELIMITER_OUT}" >> $GITHUB_OUTPUT
 
+      # Step 6: Post the result (explanation or error) as a comment on the issue
       - name: Create Comment on Issue
+        # Use the official GitHub Script action for API interactions
         uses: actions/github-script@v7
         with:
+          # Use the default GITHUB_TOKEN which has necessary permissions
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          # The JavaScript code to run
           script: |
-            // ... (JavaScript code remains the same) ...
+            // Get context for the issue and repository
             const issue_number = context.issue.number;
             const repo = context.repo.repo;
             const owner = context.repo.owner;
-            let body;
+            let body; // Variable to hold the comment body
+
+            // Get outputs from previous steps
             const extraction_error = `${{ steps.extract_code.outputs.error_message }}`;
-            const raw_output = `${{ steps.cstudio.outputs.output }}`;
-            const output_lines = raw_output.split('\n');
+            const raw_output = `${{ steps.cstudio.outputs.output }}`; // Use raw_output for clarity
+
+            // Attempt basic cleanup of potential status lines from the CLI output
+            const output_lines = (raw_output || '').split('\n'); // Ensure raw_output is treated as string
             const first_line = output_lines[0] || '';
+            // Remove known status/debug lines if present
             const explanation_content = (first_line.includes('Analyzing') || first_line.includes('Generating'))
                                         ? output_lines.slice(1).join('\n')
                                         : raw_output;
 
+            // Construct the comment body based on step outcomes
             if (extraction_error) {
+              // If code extraction failed
               body = `🤖 **Codex CLI Studio:**\n\n${extraction_error}`;
             } else if (explanation_content && !explanation_content.includes('Error running cstudio explain')) {
+              // If explanation seems successful
               const formatted_explanation = explanation_content
+                  // Standardize headers potentially added by the explain module
                   .replace(/^✨ Configuration File Explanation:/gm, '**Explanation:**')
                   .replace(/^✨ Explanation:/gm, '**Explanation:**')
-                  .trim();
+                  .trim(); // Remove leading/trailing whitespace
               body = `🤖 **Codex CLI Studio Explanation:**\n\n---\n\n${formatted_explanation || "_(AI generated an empty explanation)_"}`;
             } else {
+              // If cstudio command failed or returned empty/error output
               body = `🤖 **Codex CLI Studio:**\n\nSorry, I couldn't generate an explanation. There might have been an API issue or an internal error executing the command.`;
+              // Log the raw output for debugging purposes in the Actions console
               console.log("Raw output from cstudio step:", raw_output);
             }
+
+            // Use GitHub REST API client provided by github-script to create the comment
             await github.rest.issues.createComment({
               owner: owner,
               repo: repo,
