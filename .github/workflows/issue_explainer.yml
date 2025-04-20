@@ -7,7 +7,7 @@ on:
 
 permissions:
   issues: write
-  contents: read  
+  contents: read # Keep read permission
 
 jobs:
   explain_code_in_issue:
@@ -18,29 +18,30 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v4
 
-      # --- NEW DEBUG STEP ---
-      - name: List files in workspace
+      - name: List files in workspace (Debug)
         run: |
           echo "Current directory: $(pwd)"
           echo "Listing files:"
           ls -la
           echo "Checking for pyproject.toml:"
           find . -name pyproject.toml
-      # --- END DEBUG STEP ---
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13' # Используем 3.13 как ты указал
+          python-version: '3.13' # Let's stick to 3.11 for now, proven to work with deps
+          # --- FIX: Explicitly point to pyproject.toml for caching ---
+          cache: 'pip'
+          cache-dependency-path: 'pyproject.toml' # Tell setup-python exactly where to look
 
       - name: Install Codex CLI Studio
         run: |
           python -m pip install --upgrade pip
           pip install codex-cli-studio
 
+      # ... (Rest of the steps remain the same) ...
       - name: Extract Code Snippet from Issue Body
         id: extract_code
-        # ... (run script as before) ...
         run: |
           ISSUE_BODY=$(echo "${{ github.event.issue.body }}" | sed 's/\\r//g')
           CODE_SNIPPET=$(echo "$ISSUE_BODY" | awk '/^```(\w*)/{f=1;next} /^```/{f=0; exit} f{print}')
@@ -57,7 +58,6 @@ jobs:
 
       - name: Run cstudio explain
         id: cstudio
-        # ... (if, env, run script as before) ...
         if: steps.extract_code.outputs.error_message == null
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -79,10 +79,10 @@ jobs:
 
       - name: Create Comment on Issue
         uses: actions/github-script@v7
-        # ... (with script as before) ...
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // ... (JavaScript code remains the same) ...
             const issue_number = context.issue.number;
             const repo = context.repo.repo;
             const owner = context.repo.owner;
