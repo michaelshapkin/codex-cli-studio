@@ -1,0 +1,21 @@
+# .github/ISSUE_TEMPLATE/config.yml
+
+# Set to 'false' to disable blank issues, forcing users to use templates
+blank_issues_enabled: true
+
+# Add links to other places, displayed when a user opens the "New issue" page
+contact_links:
+  - name: ❓ Ask a Question / General Discussion
+    # Link to the Q&A category in your GitHub Discussions
+    url: https://github.com/michaelshapkin/codex-cli-studio/discussions/new?category=q-a
+    about: Please use GitHub Discussions for general questions or discussions.
+
+  - name: 💡 Suggest an Idea (Broader Discussion)
+    # Link to the Ideas category in your GitHub Discussions
+    url: https://github.com/michaelshapkin/codex-cli-studio/discussions/new?category=ideas
+    about: Have a bigger idea or want to brainstorm? Start a discussion!
+
+  # You could add links to external chat, documentation site etc. here too
+  # - name: 💬 Community Chat
+  #   url: https://your-chat-link.com
+  #   about: Join our community chat for quick questions.
