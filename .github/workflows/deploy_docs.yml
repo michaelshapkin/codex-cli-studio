@@ -1,0 +1,62 @@
+# .github/workflows/deploy_docs.yml
+name: Deploy Documentation to GitHub Pages
+
+# Run only when pushing to the main branch
+on:
+  push:
+    branches:
+      - main
+
+# Allow one concurrent deployment, cancel older runs
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    # Use Ubuntu environment
+    runs-on: ubuntu-latest
+
+    # Grant GITHUB_TOKEN permissions to write to gh-pages branch
+    permissions:
+      contents: write # Required to checkout and push to gh-pages
+
+    steps:
+      # Step 1: Check out the repository code from the main branch
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for accurate version info (optional)
+
+      # Step 2: Set up Python environment
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13' # Use a specific Python version for docs build
+          cache: 'pip'
+
+      # Step 3: Install dependencies (including Sphinx and theme)
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # Install package with 'dev' extras which include Sphinx, theme, etc.
+          pip install -e .[dev]
+          # Install graphviz system dependency needed by the 'dot' command
+          sudo apt-get update && sudo apt-get install -y graphviz
+
+      # Step 4: Build the HTML documentation
+      - name: Build Sphinx documentation
+        run: |
+          cd docs
+          make html # Runs sphinx-build in the docs directory
+
+      # Step 5: Deploy HTML to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4 # Use a popular action for deploying
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # Use the default GitHub token
+          publish_dir: ./docs/_build/html # Directory containing the built HTML site
+          # publish_branch: gh-pages # Default branch is gh-pages
+          # user_name: 'github-actions[bot]' # Default commit user
+          # user_email: 'github-actions[bot]@users.noreply.github.com' # Default commit email
+          # commit_message: 'Deploy documentation to gh-pages' # Default commit message
