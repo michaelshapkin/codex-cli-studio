@@ -1,0 +1,109 @@
+# .github/workflows/issue_explainer.yml
+name: Codex CLI Explain Issue
+
+# Trigger when an issue is labeled with 'ask-cstudio-explain'
+on:
+  issues:
+    types: [labeled]
+
+# Permissions needed to read issues and write comments
+permissions:
+  issues: write
+
+jobs:
+  explain_code_in_issue:
+    # Run only if the added label is 'ask-cstudio-explain'
+    if: github.event.label.name == 'ask-cstudio-explain' # <-- UPDATED LABEL NAME HERE
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      # Step 2: Install our CLI tool from PyPI
+      - name: Install Codex CLI Studio
+        run: |
+          python -m pip install --upgrade pip
+          pip install codex-cli-studio # Install the latest version from PyPI
+
+      # Step 3: Extract code from the first markdown block in the issue body
+      - name: Extract Code Snippet from Issue Body
+        id: extract_code
+        run: |
+          ISSUE_BODY=$(echo "${{ github.event.issue.body }}" | sed 's/\\r//g')
+          CODE_SNIPPET=$(echo "$ISSUE_BODY" | awk '/^```(\w*)/{f=1;next} /^```/{f=0; exit} f{print}')
+          if [[ -z "$CODE_SNIPPET" ]]; then
+            echo "No code block found in issue body. Exiting."
+            echo "error_message=No fenced code block (\`\`\` ... \`\`\`) found in the issue body." >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "Code snippet extracted."
+            echo "code_snippet<<EOF" >> $GITHUB_OUTPUT
+            echo "$CODE_SNIPPET" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      # Step 4: Run cstudio explain (if code was extracted)
+      - name: Run cstudio explain
+        id: cstudio
+        if: steps.extract_code.outputs.error_message == null
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TERM: dumb # Try to force simpler terminal output
+          NO_COLOR: 1
+        run: |
+          # Use process substitution to pass multiline code safely
+          EXPLANATION=$(cstudio explain <(echo "${{ steps.extract_code.outputs.code_snippet }}") )
+          if [ $? -ne 0 ]; then
+            echo "cstudio explain command failed."
+            # Try to capture stderr as well if possible
+            echo "output<<EOF" >> $GITHUB_OUTPUT
+            echo "Error running cstudio explain." >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            exit 0 # Exit gracefully to post error comment
+          fi
+          echo "Explanation generated."
+          echo "output<<EOF" >> $GITHUB_OUTPUT
+          echo "$EXPLANATION" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # Step 5: Post the explanation (or error) as a comment on the issue
+      - name: Create Comment on Issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issue_number = context.issue.number;
+            const repo = context.repo.repo;
+            const owner = context.repo.owner;
+            let body;
+            const extraction_error = `${{ steps.extract_code.outputs.error_message }}`;
+            // Remove potential initial status line from explanation if needed
+            const raw_explanation = `${{ steps.cstudio.outputs.output }}`;
+            const explanation_lines = raw_explanation.split('\n');
+            // Basic check to remove potential "Analyzing..." line if present
+            const first_line = explanation_lines[0] || '';
+            const explanation_output = first_line.includes('Analyzing') ? explanation_lines.slice(1).join('\n') : raw_explanation;
+
+            if (extraction_error) {
+              body = `🤖 **Codex CLI Studio:**\n\n${extraction_error}`;
+            } else if (explanation_output && !explanation_output.includes('Error running cstudio explain')) {
+              const formatted_explanation = explanation_output
+                  .replace(/^✨ Configuration File Explanation:/gm, '**Explanation:**')
+                  .replace(/^✨ Explanation:/gm, '**Explanation:**')
+                  .trim(); // Remove leading/trailing whitespace
+              body = `🤖 **Codex CLI Studio Explanation:**\n\n---\n\n${formatted_explanation || "_(No explanation content generated)_"}`;
+            } else {
+              body = `🤖 **Codex CLI Studio:**\n\nSorry, I couldn't generate an explanation. There might have been an API issue or an internal error.`;
+              console.log("Raw output from cstudio step:", raw_explanation); // Log raw output for debugging
+            }
+            await github.rest.issues.createComment({
+              owner: owner,
+              repo: repo,
+              issue_number: issue_number,
+              body: body
+            });
